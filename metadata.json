@@ -1,0 +1,6 @@
+{
+  "name": "Xbox Controller UI",
+  "description": "A highly realistic, customizable Xbox controller interface with 3D canvas buttons, RGB lighting, drag-and-drop HUD, and layout presets.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
