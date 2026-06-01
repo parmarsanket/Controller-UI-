@@ -642,7 +642,7 @@ fun MainScreen(
                                                             .padding(horizontal = 6.dp, vertical = 2.dp)
                                                     ) {
                                                         Text(
-                                                            text = input.type.name.takeLast(7),
+                                                            text = getShortLabel(input.type),
                                                             color = Color.White,
                                                             fontFamily = FontFamily.Monospace,
                                                             fontSize = 9.sp,
@@ -1124,5 +1124,38 @@ fun MainScreen(
                 }
             }
         }
+    }
+}
+
+private fun getShortLabel(type: InputType): String {
+    return when (type) {
+        InputType.BUTTON_A -> "Y-A"
+        InputType.BUTTON_B -> "Y-B"
+        InputType.BUTTON_X -> "Y-X"
+        InputType.BUTTON_Y -> "Y-Y"
+        InputType.DPAD_UP -> "DP-UP"
+        InputType.DPAD_DOWN -> "DP-DN"
+        InputType.DPAD_LEFT -> "DP-LF"
+        InputType.DPAD_RIGHT -> "DP-RT"
+        InputType.DPAD -> "D-PAD"
+        InputType.STICK_L -> "L-STICK"
+        InputType.STICK_R -> "R-STICK"
+        InputType.STICK_L_CLICK -> "L3-CLK"
+        InputType.STICK_R_CLICK -> "R3-CLK"
+        InputType.BUMPER_L -> "LB"
+        InputType.BUMPER_R -> "RB"
+        InputType.TRIGGER_L -> "LT"
+        InputType.TRIGGER_R -> "RT"
+        InputType.BUTTON_MENU -> "MENU"
+        InputType.BUTTON_VIEW -> "VIEW"
+        InputType.BUTTON_XBOX -> "XBOX"
+        InputType.BUTTON_SHARE -> "SHARE"
+        InputType.BUTTON_SCREENSHOT -> "SHOT"
+        InputType.BUTTON_M1 -> "M1"
+        InputType.BUTTON_M2 -> "M2"
+        InputType.BUTTON_M3 -> "M3"
+        InputType.BUTTON_M4 -> "M4"
+        InputType.BUTTON_PROFILE -> "PROF"
+        InputType.BUTTON_TURBO -> "TURB"
     }
 }

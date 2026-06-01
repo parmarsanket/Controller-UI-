@@ -110,7 +110,7 @@ fun InputDrawing(
                 drawGenericRoundButton(centerX, centerY, radius, isPressed, "R3", rgbColor, rgbEnabled)
             }
             InputType.BUTTON_SHARE -> {
-                drawGenericRoundButton(centerX, centerY, radius, isPressed, "SHARE", rgbColor, rgbEnabled)
+                draw3DShareButton(centerX, centerY, radius, isPressed, rgbColor, rgbEnabled)
             }
             InputType.BUTTON_SCREENSHOT -> {
                 drawGenericRoundButton(centerX, centerY, radius, isPressed, "SCR", rgbColor, rgbEnabled)
@@ -266,97 +266,165 @@ private fun DrawScope.draw3DDPad(
     rgbColor: Color,
     rgbEnabled: Boolean
 ) {
-    val dpadPath = Path().apply {
-        val barHalf = radius * 0.32f
-        val wingLen = radius * 0.95f
-        // Draw cross with corner bezels
-        moveTo(-barHalf, -wingLen)
-        lineTo(barHalf, -wingLen)
-        lineTo(barHalf, -barHalf)
-        lineTo(wingLen, -barHalf)
-        lineTo(wingLen, barHalf)
-        lineTo(barHalf, barHalf)
-        lineTo(barHalf, wingLen)
-        lineTo(-barHalf, wingLen)
-        lineTo(-barHalf, barHalf)
-        lineTo(-wingLen, barHalf)
-        lineTo(-wingLen, -barHalf)
-        lineTo(-barHalf, -barHalf)
-        close()
-        translate(Offset(cx, cy))
-    }
+    val center = Offset(cx, cy)
+    val r = radius * 0.95f
 
-    // 3D Shadow Plate behind Cross
-    val shadowPath = Path().apply {
-        addPath(dpadPath)
-        translate(Offset(2f, 4f))
-    }
-    drawPath(path = shadowPath, color = Color.Black.copy(alpha = 0.65f))
+    // 1. Deep outer housing socket ring (shadowed chrome rim)
+    drawCircle(
+        color = Color(0xFF040506),
+        radius = r,
+        center = center
+    )
+    drawCircle(
+        brush = Brush.verticalGradient(
+            colors = listOf(Color(0xFF3E434B), Color(0xFF101114)),
+            startY = cy - r,
+            endY = cy + r
+        ),
+        radius = r * 0.95f,
+        center = center,
+        style = Stroke(width = 3.5f)
+    )
 
-    // D-Pad plate gradient base
-    drawPath(
-        path = dpadPath,
+    // 2. High-end Faceted Concave Saucer base Disc (Xbox Elite styling)
+    val discBrush = Brush.radialGradient(
+        colors = listOf(
+            Color(0xFF2C2F36), // metallic core
+            Color(0xFF131417)  // deep edge shadow
+        ),
+        center = center - Offset(r * 0.12f, r * 0.12f),
+        radius = r * 0.92f
+    )
+    drawCircle(
+        brush = discBrush,
+        radius = r * 0.92f,
+        center = center
+    )
+
+    // Inner concave dish shade
+    drawCircle(
         brush = Brush.radialGradient(
-            colors = listOf(Color(0xFF26282D), Color(0xFF0F1012)),
-            center = Offset(cx, cy - radius * 0.2f),
-            radius = radius
+            colors = listOf(Color(0xFF0C0D0F), Color(0xFF22242B)),
+            center = center,
+            radius = r * 0.70f
+        ),
+        radius = r * 0.70f,
+        center = center
+    )
+
+    // 3. Faceted wedge design for cross sections (UP, DOWN, LEFT, RIGHT)
+    val barHalf = r * 0.23f
+    val mainLen = r * 0.88f
+
+    // Embossed tactile cross on top of the saucer disc
+    val crossPath = Path().apply {
+        moveTo(cx - barHalf, cy - mainLen)
+        lineTo(cx + barHalf, cy - mainLen)
+        lineTo(cx + barHalf, cy - barHalf)
+        lineTo(cx + mainLen, cy - barHalf)
+        lineTo(cx + mainLen, cy + barHalf)
+        lineTo(cx + barHalf, cy + barHalf)
+        lineTo(cx + barHalf, cy + mainLen)
+        lineTo(cx - barHalf, cy + mainLen)
+        lineTo(cx - barHalf, cy + barHalf)
+        lineTo(cx - mainLen, cy + barHalf)
+        lineTo(cx - mainLen, cy - barHalf)
+        lineTo(cx - barHalf, cy - barHalf)
+        close()
+    }
+
+    // Draw shadow under cross
+    drawPath(path = crossPath, color = Color.Black.copy(alpha = 0.45f))
+
+    // Draw solid body on top
+    drawPath(
+        path = crossPath,
+        brush = Brush.linearGradient(
+            colors = listOf(Color(0xFF383C45), Color(0xFF15161A)),
+            start = Offset(cx, cy - mainLen),
+            end = Offset(cx, cy + mainLen)
         )
     )
 
-    // Highlight outer bevels
+    // Accent outline beveled strokes
     drawPath(
-        path = dpadPath,
-        brush = Brush.verticalGradient(
-            colors = listOf(Color.White.copy(alpha = 0.22f), Color.Transparent, Color.Black.copy(alpha = 0.5f))
-        ),
-        style = Stroke(width = 2.5f)
+        path = crossPath,
+        color = Color.White.copy(alpha = 0.1f),
+        style = Stroke(width = 2f)
     )
 
-    // Center circular bowl recess
-    drawCircle(
-        brush = Brush.radialGradient(
-            colors = listOf(Color(0xFF0D0E10), Color(0xFF1D1F23)),
-            center = Offset(cx, cy),
-            radius = radius * 0.28f
-        ),
-        radius = radius * 0.28f,
-        center = Offset(cx, cy)
-    )
-
-    // Directional arrows and dynamic click states
-    val directionsList = listOf(
-        Triple("UP", Offset(cx, cy - radius * 0.65f), "▲"),
-        Triple("DOWN", Offset(cx, cy + radius * 0.65f), "▼"),
-        Triple("LEFT", Offset(cx - radius * 0.65f, cy), "◀"),
-        Triple("RIGHT", Offset(cx + radius * 0.65f, cy), "▶")
-    )
-
-    for ((dir, offset, symbol) in directionsList) {
-        val active = activeDir == dir || (isPressed && activeDir == null) // Show pressed response
-        
+    // Draw active direction lighting
+    val activeColor = if (rgbEnabled) rgbColor else Color(0xFF107C10)
+    val directions = listOf("UP", "DOWN", "LEFT", "RIGHT")
+    
+    for (dir in directions) {
+        val active = activeDir == dir || (isPressed && activeDir == null)
         if (active) {
-            val indicatorC = if (rgbEnabled) rgbColor else Color(0xFF0DE2F9)
-            // Draw glowing core behind the active direction
-            drawCircle(
-                color = indicatorC.copy(alpha = 0.35f),
-                radius = radius * 0.25f,
-                center = offset
+            val wedgePath = Path().apply {
+                when (dir) {
+                    "UP" -> {
+                        moveTo(cx - barHalf * 0.85f, cy - barHalf)
+                        lineTo(cx + barHalf * 0.85f, cy - barHalf)
+                        lineTo(cx + barHalf * 0.85f, cy - mainLen * 0.92f)
+                        lineTo(cx - barHalf * 0.85f, cy - mainLen * 0.92f)
+                    }
+                    "DOWN" -> {
+                        moveTo(cx - barHalf * 0.85f, cy + barHalf)
+                        lineTo(cx + barHalf * 0.85f, cy + barHalf)
+                        lineTo(cx + barHalf * 0.85f, cy + mainLen * 0.92f)
+                        lineTo(cx - barHalf * 0.85f, cy + mainLen * 0.92f)
+                    }
+                    "LEFT" -> {
+                        moveTo(cx - barHalf, cy - barHalf * 0.85f)
+                        lineTo(cx - barHalf, cy + barHalf * 0.85f)
+                        lineTo(cx - mainLen * 0.92f, cy + barHalf * 0.85f)
+                        lineTo(cx - mainLen * 0.92f, cy - barHalf * 0.85f)
+                    }
+                    "RIGHT" -> {
+                        moveTo(cx + barHalf, cy - barHalf * 0.85f)
+                        lineTo(cx + barHalf, cy + barHalf * 0.85f)
+                        lineTo(cx + mainLen * 0.92f, cy + barHalf * 0.85f)
+                        lineTo(cx + mainLen * 0.92f, cy - barHalf * 0.85f)
+                    }
+                }
+                close()
+            }
+            
+            // Draw smooth neon core glow in active quadrant
+            drawPath(
+                path = wedgePath,
+                brush = Brush.radialGradient(
+                    colors = listOf(activeColor.copy(alpha = 0.75f), activeColor.copy(alpha = 0.15f)),
+                    center = when (dir) {
+                        "UP" -> Offset(cx, cy - r * 0.5f)
+                        "DOWN" -> Offset(cx, cy + r * 0.5f)
+                        "LEFT" -> Offset(cx - r * 0.5f, cy)
+                        "RIGHT" -> Offset(cx + r * 0.5f, cy)
+                        else -> center
+                    },
+                    radius = r * 0.40f
+                )
             )
-            // Arrow indicator in neon
-            drawCircle(
-                color = indicatorC,
-                radius = radius * 0.08f,
-                center = offset
-            )
-        } else {
-            // Unclicked silent arrow glyph dots
-            drawCircle(
-                color = Color(0xFF5A5E66),
-                radius = radius * 0.05f,
-                center = offset
+            drawPath(
+                path = wedgePath,
+                color = activeColor,
+                style = Stroke(width = 3.5f)
             )
         }
     }
+
+    // Inner center chrome core circle ring
+    drawCircle(
+        color = Color(0xFF0F1012),
+        radius = r * 0.22f,
+        center = center
+    )
+    drawCircle(
+        color = Color.White.copy(alpha = 0.15f),
+        radius = r * 0.22f,
+        center = center,
+        style = Stroke(width = 1.5f)
+    )
 }
 
 private fun DrawScope.draw3DFaceButton(
@@ -368,35 +436,35 @@ private fun DrawScope.draw3DFaceButton(
     rgbColor: Color,
     rgbEnabled: Boolean
 ) {
-    // Xbox face button primary colors and icons
+    // Xbox face button coordinates
     val (primaryColor, textStr) = when (type) {
-        InputType.BUTTON_A -> Pair(Color(0xFF107C10), "A") // Green
-        InputType.BUTTON_B -> Pair(Color(0xFFE81123), "B") // Red
-        InputType.BUTTON_X -> Pair(Color(0xFF0078D7), "X") // Blue
-        InputType.BUTTON_Y -> Pair(Color(0xFFF9AA11), "Y") // Yellow
+        InputType.BUTTON_A -> Pair(Color(0xFF2DFD1F), "A") // Vivid Green
+        InputType.BUTTON_B -> Pair(Color(0xFFFF1E25), "B") // Vivid Red
+        InputType.BUTTON_X -> Pair(Color(0xFF0D9DFF), "X") // Vivid Blue
+        InputType.BUTTON_Y -> Pair(Color(0xFFFFD500), "Y") // Vivid Yellow
         else -> Pair(Color.Gray, "?")
     }
 
     val drawRadius = if (isPressed) radius * 0.88f else radius
     val drawCenter = if (isPressed) Offset(cx + 1f, cy + 2f) else Offset(cx, cy)
 
-    // A. Drop shadow depth
+    // A. Deep drop shadow on controller casing
     drawCircle(
         color = Color.Black.copy(alpha = if (isPressed) 0.5f else 0.75f),
         radius = radius,
         center = Offset(cx + 2f, cy + 4f)
     )
 
-    // B. Base solid glossy orb capsule
+    // B. Base solid glossy piano-black dome
     val orbBrush = Brush.radialGradient(
         colors = if (isPressed) {
-            listOf(primaryColor, primaryColor.copy(alpha = 0.6f), Color(0xFF050505))
+            listOf(Color(0xFF383C45), Color(0xFF141518), Color.Black)
         } else {
-            // Crystal glass 3D reflections with rich colored backwash
+            // Elegant translucent obsidian with colored backwash glow
             listOf(
-                primaryColor.copy(alpha = 0.35f),
-                primaryColor.copy(alpha = 0.7f),
-                Color(0xFF101215),
+                Color(0xFF2E3138), // Center glass highlight
+                primaryColor.copy(alpha = 0.12f), // back-glow of lettering
+                Color(0xFF121417), // Piano-black body
                 Color.Black
             )
         },
@@ -412,85 +480,75 @@ private fun DrawScope.draw3DFaceButton(
 
     // C. 3D glass top shine lens reflection
     val lensPath = Path().apply {
-        addOval(Rect(drawCenter.x - drawRadius * 0.75f, drawCenter.y - drawRadius * 0.85f, drawCenter.x + drawRadius * 0.75f, drawCenter.y - drawRadius * 0.15f))
+        addOval(Rect(drawCenter.x - drawRadius * 0.72f, drawCenter.y - drawRadius * 0.82f, drawCenter.x + drawRadius * 0.72f, drawCenter.y - drawRadius * 0.15f))
     }
     drawPath(
         path = lensPath,
         brush = Brush.verticalGradient(
-            colors = listOf(Color.White.copy(alpha = 0.45f), Color.White.copy(alpha = 0.02f)),
-            startY = drawCenter.y - drawRadius * 0.85f,
+            colors = listOf(Color.White.copy(alpha = 0.40f), Color.White.copy(alpha = 0.02f)),
+            startY = drawCenter.y - drawRadius * 0.82f,
             endY = drawCenter.y - drawRadius * 0.15f
         )
     )
 
-    // D. Outer ring glossy bezel
+    // D. Outer ring glossy glossy bevel stroke
     drawCircle(
-        color = Color.White.copy(alpha = if (isPressed) 0.1f else 0.20f),
+        color = Color.White.copy(alpha = if (isPressed) 0.08f else 0.16f),
         radius = drawRadius,
         center = drawCenter,
         style = Stroke(width = 2.5f)
     )
 
-    // E. Saturated dynamic glyph overlay in the center of the dome
-    // Compose draw text or high contrast stylized shape
+    // E. High contrast stylized vector text glyph rendered with neon core
     drawButtonGlyph(drawCenter, drawRadius * 0.45f, textStr, primaryColor)
 }
 
 private fun DrawScope.drawButtonGlyph(center: Offset, size: Float, text: String, color: Color) {
-    // Instead of drawing rich fonts that might fail, we draw high-contrast, beautiful geometric controller shapes
-    // representing X, Y, A, B inside a clean center card! This represents incredible design fidelity.
-    // For letterings we draw highly visible double-stroked vector overlays!
-    val capSize = size * 0.75f
-    val strokeW = 4.5f
+    val capSize = size * 0.78f
+    val strokeGlowW = 6.0f
+    val strokeCoreW = 2.2f
     
+    // Draw letters with illuminated Neon-Core styling (Outer colored soft stroke + Inner thin white core)
+    val path = Path()
     when (text) {
         "A" -> {
-            // Draw neat letter A
-            val path = Path().apply {
+            path.apply {
                 moveTo(center.x, center.y - capSize)
-                lineTo(center.x - capSize * 0.7f, center.y + capSize)
+                lineTo(center.x - capSize * 0.68f, center.y + capSize)
                 moveTo(center.x, center.y - capSize)
-                lineTo(center.x + capSize * 0.7f, center.y + capSize)
+                lineTo(center.x + capSize * 0.68f, center.y + capSize)
                 moveTo(center.x - capSize * 0.4f, center.y + capSize * 0.2f)
                 lineTo(center.x + capSize * 0.4f, center.y + capSize * 0.2f)
             }
-            drawPath(path, Color.White, style = Stroke(width = strokeW, cap = StrokeCap.Round))
         }
         "B" -> {
-            // Draw neat letter B
-            val path = Path().apply {
-                moveTo(center.x - capSize * 0.5f, center.y - capSize)
-                lineTo(center.x - capSize * 0.5f, center.y + capSize)
-                // top loop
+            path.apply {
+                moveTo(center.x - capSize * 0.45f, center.y - capSize)
+                lineTo(center.x - capSize * 0.45f, center.y + capSize)
                 arcTo(
-                    rect = Rect(center.x - capSize * 0.5f, center.y - capSize, center.x + capSize * 0.6f, center.y),
+                    rect = Rect(center.x - capSize * 0.45f, center.y - capSize, center.x + capSize * 0.55f, center.y),
                     startAngleDegrees = -90f,
                     sweepAngleDegrees = 180f,
                     forceMoveTo = false
                 )
-                // bottom loop
                 arcTo(
-                    rect = Rect(center.x - capSize * 0.5f, center.y, center.x + capSize * 0.6f, center.y + capSize),
+                    rect = Rect(center.x - capSize * 0.45f, center.y, center.x + capSize * 0.55f, center.y + capSize),
                     startAngleDegrees = -90f,
                     sweepAngleDegrees = 180f,
                     forceMoveTo = false
                 )
             }
-            drawPath(path, Color.White, style = Stroke(width = strokeW, cap = StrokeCap.Round))
         }
         "X" -> {
-            // Draw letter X
-            val path = Path().apply {
+            path.apply {
                 moveTo(center.x - capSize * 0.6f, center.y - capSize * 0.8f)
                 lineTo(center.x + capSize * 0.6f, center.y + capSize * 0.8f)
                 moveTo(center.x + capSize * 0.6f, center.y - capSize * 0.8f)
                 lineTo(center.x - capSize * 0.6f, center.y + capSize * 0.8f)
             }
-            drawPath(path, Color.White, style = Stroke(width = strokeW, cap = StrokeCap.Round))
         }
         "Y" -> {
-            // Draw letter Y
-            val path = Path().apply {
+            path.apply {
                 moveTo(center.x - capSize * 0.6f, center.y - capSize)
                 lineTo(center.x, center.y)
                 moveTo(center.x + capSize * 0.6f, center.y - capSize)
@@ -498,9 +556,14 @@ private fun DrawScope.drawButtonGlyph(center: Offset, size: Float, text: String,
                 moveTo(center.x, center.y)
                 lineTo(center.x, center.y + capSize)
             }
-            drawPath(path, Color.White, style = Stroke(width = strokeW, cap = StrokeCap.Round))
         }
     }
+    
+    // 1. Draw soft glowing background track (outer stroke in its brand color)
+    drawPath(path, color, style = Stroke(width = strokeGlowW, cap = StrokeCap.Round, join = StrokeJoin.Round))
+    
+    // 2. Draw sharp white illuminating core inside
+    drawPath(path, Color.White, style = Stroke(width = strokeCoreW, cap = StrokeCap.Round, join = StrokeJoin.Round))
 }
 
 private fun DrawScope.draw3DTrigger(
@@ -960,4 +1023,72 @@ private fun DrawScope.drawGenericRoundButton(
     }
     val textY = cy - ((textPaint.descent() + textPaint.ascent()) / 2f)
     drawContext.canvas.nativeCanvas.drawText(labelText, cx, textY, textPaint)
+}
+
+private fun DrawScope.draw3DShareButton(
+    cx: Float,
+    cy: Float,
+    radius: Float,
+    isPressed: Boolean,
+    rgbColor: Color,
+    rgbEnabled: Boolean
+) {
+    val r = radius * 0.85f
+    val center = Offset(cx, cy)
+    val cornerR = r * 0.42f
+
+    // Recessed dark socket background
+    drawRoundRect(
+        color = Color(0xFF060708),
+        topLeft = Offset(cx - r * 1.15f, cy - r * 0.78f),
+        size = Size(r * 2.3f, r * 1.56f),
+        cornerRadius = CornerRadius(cornerR)
+    )
+
+    val activeColor = if (isPressed) {
+        if (rgbEnabled) rgbColor else Color(0xFF0DE2F9)
+    } else {
+        Color(0xFF282B30)
+    }
+
+    // Dynamic metallic button surface
+    drawRoundRect(
+        brush = Brush.radialGradient(
+            colors = listOf(activeColor, Color(0xFF131517)),
+            center = center,
+            radius = r * 1.25f
+        ),
+        topLeft = Offset(cx - r * 1.05f, cy - r * 0.68f),
+        size = Size(r * 2.1f, r * 1.36f),
+        cornerRadius = CornerRadius(cornerR * 0.9f)
+    )
+
+    // Silver highlight click ring outline
+    drawRoundRect(
+        color = Color.White.copy(alpha = if (isPressed) 0.35f else 0.12f),
+        topLeft = Offset(cx - r * 1.05f, cy - r * 0.68f),
+        size = Size(r * 2.1f, r * 1.36f),
+        cornerRadius = CornerRadius(cornerR * 0.9f),
+        style = Stroke(width = 1.5f)
+    )
+
+    // Vector drawing of the distinct physical Share/Upload Icon (Brace with Up Arrow)
+    val symColor = if (isPressed) Color.White else Color(0xFF8B929E)
+    val boxW = r * 0.58f
+    val boxH = r * 0.38f
+    
+    // Bottom brace slot
+    val braceY = cy + r * 0.12f
+    drawLine(symColor, Offset(cx - boxW / 2f, braceY), Offset(cx - boxW / 2f, braceY + boxH * 0.5f), strokeWidth = 2.5f, cap = StrokeCap.Round)
+    drawLine(symColor, Offset(cx - boxW / 2f, braceY + boxH * 0.5f), Offset(cx + boxW / 2f, braceY + boxH * 0.5f), strokeWidth = 2.5f, cap = StrokeCap.Round)
+    drawLine(symColor, Offset(cx + boxW / 2f, braceY), Offset(cx + boxW / 2f, braceY + boxH * 0.5f), strokeWidth = 2.5f, cap = StrokeCap.Round)
+
+    // Centered vertical shaft
+    val arrowTopY = cy - r * 0.38f
+    val arrowShaftBottomY = cy + r * 0.08f
+    drawLine(symColor, Offset(cx, arrowTopY), Offset(cx, arrowShaftBottomY), strokeWidth = 3f, cap = StrokeCap.Round)
+    // Dynamic pointing arrow wings
+    val wingW = r * 0.20f
+    drawLine(symColor, Offset(cx, arrowTopY), Offset(cx - wingW, arrowTopY + wingW), strokeWidth = 2.5f, cap = StrokeCap.Round)
+    drawLine(symColor, Offset(cx, arrowTopY), Offset(cx + wingW, arrowTopY + wingW), strokeWidth = 2.5f, cap = StrokeCap.Round)
 }

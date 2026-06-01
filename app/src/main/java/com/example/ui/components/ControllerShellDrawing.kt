@@ -136,7 +136,137 @@ fun ControllerShellDrawing(
             )
         )
 
-        // 3. HYPER-REALISTIC BLANK 3D BODY SHELL
+        // 2b. HIGH-FIDELITY PROTRUDING PHYSICAL WING PODS (BUMPERS & TRIGGERS)
+        // Draw Left Trigger (LT) rising behind
+        val leftTriggerPath = Path().apply {
+            moveTo(leftX + controllerWidth * 0.05f, topY + controllerHeight * 0.18f)
+            cubicTo(
+                leftX - controllerWidth * 0.04f, topY + controllerHeight * 0.17f,
+                leftX - controllerWidth * 0.02f, topY + controllerHeight * 0.02f,
+                leftX + controllerWidth * 0.08f, topY + controllerHeight * 0.04f
+            )
+            cubicTo(
+                leftX + controllerWidth * 0.14f, topY + controllerHeight * 0.06f,
+                leftX + controllerWidth * 0.18f, topY + controllerHeight * 0.12f,
+                leftX + controllerWidth * 0.11f, topY + controllerHeight * 0.17f
+            )
+            close()
+        }
+        drawPath(
+            path = leftTriggerPath,
+            brush = Brush.verticalGradient(
+                colors = listOf(Color(0xFF353942), Color(0xFF131518)),
+                startY = topY,
+                endY = topY + controllerHeight * 0.18f
+            )
+        )
+        drawPath(
+            path = leftTriggerPath,
+            color = Color.White.copy(alpha = 0.18f),
+            style = Stroke(width = 2.5f)
+        )
+
+        // Draw Left Bumper (LB) slightly forward
+        val leftBumperPath = Path().apply {
+            moveTo(leftX + controllerWidth * 0.02f, topY + controllerHeight * 0.28f)
+            cubicTo(
+                leftX - controllerWidth * 0.06f, topY + controllerHeight * 0.25f,
+                leftX - controllerWidth * 0.03f, topY + controllerHeight * 0.14f,
+                leftX + controllerWidth * 0.07f, topY + controllerHeight * 0.15f
+            )
+            cubicTo(
+                leftX + controllerWidth * 0.13f, topY + controllerHeight * 0.16f,
+                leftX + controllerWidth * 0.18f, topY + controllerHeight * 0.24f,
+                leftX + controllerWidth * 0.11f, topY + controllerHeight * 0.27f
+            )
+            close()
+        }
+        drawPath(
+            path = leftBumperPath,
+            brush = Brush.verticalGradient(
+                colors = listOf(Color(0xFF2A2E35), Color(0xFF0F1012)),
+                startY = topY + controllerHeight * 0.12f,
+                endY = topY + controllerHeight * 0.28f
+            )
+        )
+        drawPath(
+            path = leftBumperPath,
+            color = Color.White.copy(alpha = 0.12f),
+            style = Stroke(width = 2f)
+        )
+
+        // Draw Right Trigger (RT) rising behind
+        val rightTriggerPath = Path().apply {
+            moveTo(rightX - controllerWidth * 0.05f, topY + controllerHeight * 0.18f)
+            cubicTo(
+                rightX + controllerWidth * 0.04f, topY + controllerHeight * 0.17f,
+                rightX + controllerWidth * 0.02f, topY + controllerHeight * 0.02f,
+                rightX - controllerWidth * 0.08f, topY + controllerHeight * 0.04f
+            )
+            cubicTo(
+                rightX - controllerWidth * 0.14f, topY + controllerHeight * 0.06f,
+                rightX - controllerWidth * 0.18f, topY + controllerHeight * 0.12f,
+                rightX - controllerWidth * 0.11f, topY + controllerHeight * 0.17f
+            )
+            close()
+        }
+        drawPath(
+            path = rightTriggerPath,
+            brush = Brush.verticalGradient(
+                colors = listOf(Color(0xFF353942), Color(0xFF131518)),
+                startY = topY,
+                endY = topY + controllerHeight * 0.18f
+            )
+        )
+        drawPath(
+            path = rightTriggerPath,
+            color = Color.White.copy(alpha = 0.18f),
+            style = Stroke(width = 2.5f)
+        )
+
+        // Draw Right Bumper (RB) slightly forward
+        val rightBumperPath = Path().apply {
+            moveTo(rightX - controllerWidth * 0.02f, topY + controllerHeight * 0.28f)
+            cubicTo(
+                rightX + controllerWidth * 0.06f, topY + controllerHeight * 0.25f,
+                rightX + controllerWidth * 0.03f, topY + controllerHeight * 0.14f,
+                rightX - controllerWidth * 0.07f, topY + controllerHeight * 0.15f
+            )
+            cubicTo(
+                rightX - controllerWidth * 0.13f, topY + controllerHeight * 0.16f,
+                rightX - controllerWidth * 0.18f, topY + controllerHeight * 0.24f,
+                rightX - controllerWidth * 0.11f, topY + controllerHeight * 0.27f
+            )
+            close()
+        }
+        drawPath(
+            path = rightBumperPath,
+            brush = Brush.verticalGradient(
+                colors = listOf(Color(0xFF2A2E35), Color(0xFF0F1012)),
+                startY = topY + controllerHeight * 0.12f,
+                endY = topY + controllerHeight * 0.28f
+            )
+        )
+        drawPath(
+            path = rightBumperPath,
+            color = Color.White.copy(alpha = 0.12f),
+            style = Stroke(width = 2f)
+        )
+
+        // Draw embossed text labels on physical trigger/bumper wings (LT, LB, RT, RB)
+        val wingTextPaint = android.graphics.Paint().apply {
+            color = android.graphics.Color.argb(165, 230, 235, 245)
+            textSize = controllerWidth * 0.026f
+            textAlign = android.graphics.Paint.Align.CENTER
+            typeface = android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD)
+            isAntiAlias = true
+        }
+        drawContext.canvas.nativeCanvas.drawText("LT", leftX + controllerWidth * 0.045f, topY + controllerHeight * 0.1f, wingTextPaint)
+        drawContext.canvas.nativeCanvas.drawText("LB", leftX + controllerWidth * 0.055f, topY + controllerHeight * 0.21f, wingTextPaint)
+        drawContext.canvas.nativeCanvas.drawText("RT", rightX - controllerWidth * 0.045f, topY + controllerHeight * 0.1f, wingTextPaint)
+        drawContext.canvas.nativeCanvas.drawText("RB", rightX - controllerWidth * 0.055f, topY + controllerHeight * 0.21f, wingTextPaint)
+
+        // 3. HYPER-REALISTIC BLANK 3D BODY SHELL (OBSIDIAN BLACK MATTE BODY)
         val bodyPath = Path().apply {
             // Upper center bridge outline
             moveTo(centerX - controllerWidth * 0.18f, topY + controllerHeight * 0.15f)
@@ -177,15 +307,15 @@ fun ControllerShellDrawing(
             close()
         }
 
-        // Realistic metallic carbon-gray controller body finish
+        // Realistic metallic obsidian controller body finish
         val bodyBrush = Brush.radialGradient(
             colors = listOf(
-                Color(0xFF2E3236), // Center highlight matte gray
-                Color(0xFF1E2124), // Mid body charcoal
-                Color(0xFF0F1012)  // Deep shadow edges
+                Color(0xFF2E3137), // Center highlight matte charcoal
+                Color(0xFF141618), // Mid body rich obsidian
+                Color(0xFF08090A)  // Deep shadow edges
             ),
             center = Offset(centerX, centerY - controllerHeight * 0.1f),
-            radius = controllerWidth * 0.55f
+            radius = controllerWidth * 0.58f
         )
         drawPath(path = bodyPath, brush = bodyBrush)
 
